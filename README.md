@@ -1,0 +1,2 @@
+# SaveDataManagerForUnityEditor
+UnityEditor上でセーブデータを扱うために作りました。
