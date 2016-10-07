@@ -11,6 +11,7 @@ namespace SaveDataManagerForEditor
         private string[] selectTabs = { "Cache","SaveData","PlayerPrefs"};
         private int selectTab = -1;
         private string[] pathList;
+        private Vector2 scrollPos = Vector2.zero;
 
         [MenuItem("Tools/SaveDataManager")]
         public static void CreateWindow()
@@ -33,9 +34,6 @@ namespace SaveDataManagerForEditor
                     case 1:
                         OnInitSaveData();
                         break;
-                    case 2:
-                        OnInitPlayerPref();
-                        break;
                 }
             }
             switch (this.selectTab)
@@ -45,9 +43,6 @@ namespace SaveDataManagerForEditor
                     break;
                 case 1:
                     OnGUISaveData();
-                    break;
-                case 2:
-                    OnGUIPlayerPrefs();
                     break;
             }
         }
@@ -59,69 +54,57 @@ namespace SaveDataManagerForEditor
         {
             this.CreateFileList(Application.persistentDataPath);
         }
-        private void OnInitPlayerPref()
-        {
 
-        }
-
-        private void OnGUIPathes()
-        {
-            EditorGUILayout.LabelField("Application.temporaryCachePath " + Application.temporaryCachePath);
-            if (GUILayout.Button("Open"))
-            {
-                OpenInExplorer(Application.temporaryCachePath);
-            }
-            EditorGUILayout.LabelField("Application.persistentDataPath " + Application.persistentDataPath);
-            if (GUILayout.Button("Open"))
-            {
-                OpenInExplorer(Application.persistentDataPath);
-            }
-        }
 
         private void OnGUICache()
         {
-
-            EditorGUILayout.LabelField("Application.temporaryCachePath ");
-            EditorGUILayout.LabelField( Application.temporaryCachePath);
-
-            if (GUILayout.Button("Open"))
-            {
-                OpenInExplorer(Application.temporaryCachePath);
-            }
-            if (this.pathList == null)
-            {
-                return;
-            }
-            foreach (var file in this.pathList)
-            {
-                EditorGUILayout.LabelField(file);
-            }
+            OnGuiFileList("Application.temporaryCachePath ", Application.temporaryCachePath, "キャッシュ");
         }
 
 
         private void OnGUISaveData()
         {
+            OnGuiFileList("Application.persistentDataPath ", Application.persistentDataPath,"セーブデータ");
+        }
 
-            EditorGUILayout.LabelField("Application.persistentDataPath ");
-            EditorGUILayout.LabelField(Application.persistentDataPath);
+        private void OnGuiFileList(string title, string path,string explain)
+        {
 
+            EditorGUILayout.LabelField(title);
+            EditorGUILayout.LabelField(path);
+
+            EditorGUILayout.BeginHorizontal();
             if (GUILayout.Button("Open"))
             {
-                OpenInExplorer(Application.persistentDataPath);
+                OpenInExplorer(path);
             }
-            if (this.pathList == null)
+            if (GUILayout.Button("Reset"))
+            {
+                if (EditorUtility.DisplayDialog("確認", explain + "を削除してよろしいですか？", "OK", "Cancel"))
+                {
+                    ResetData(path);
+                    this.pathList = null;
+                }
+            }
+            EditorGUILayout.EndHorizontal();
+            ListFiles(this.pathList);
+        }
+
+        private void ListFiles(string[] list)
+        {
+            EditorGUILayout.LabelField("ファイル一覧");
+            if (list == null)
             {
                 return;
             }
-            foreach (var file in this.pathList)
+            scrollPos = EditorGUILayout.BeginScrollView(scrollPos);
+            foreach (var file in list)
             {
                 EditorGUILayout.LabelField(file);
             }
+            EditorGUILayout.EndScrollView();
         }
 
-        private void OnGUIPlayerPrefs()
-        {
-        }
 
         private void CreateFileList(string path)
         {
@@ -133,11 +116,17 @@ namespace SaveDataManagerForEditor
             }
         }
 
+        private void ResetData(string path) {
+            Directory.Delete(path, true);
+        }
+
         private void OpenInExplorer(string path)
         {
 #if UNITY_EDITOR_WIN
             path = path.Replace("/", "\\");
             Process.Start("explorer.exe", "/select," + path);
+#elif UNITY_EDITOR_OSX
+            EditorUtility.RevealInFinder(path);
 #endif
         }
     }
